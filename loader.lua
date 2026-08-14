@@ -8,6 +8,7 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local REPO = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(REPO .. "Library.lua"))()
@@ -36,7 +37,6 @@ local BeatState = {
 	BeatSurvivorDone = false,
 	LastRole = nil,
 }
-local FinishWatchActive = false
 local ForceServerHop = false
 local LastNotifTime = 0
 local ServerHop
@@ -306,6 +306,37 @@ local function FindFinish(map)
 	end)
 	return pos
 end
+local FINISH_ATTEMPTS = 3
+local FINISH_CONFIRM = 4
+local FINISH_NUDGE = 3
+local function ApproachFinish(root, exitPos)
+	local look = root.CFrame.LookVector
+	look = Vector3.new(look.X, 0, look.Z)
+	if look.Magnitude < 0.1 then
+		look = Vector3.new(0, 0, -1)
+	end
+	look = look.Unit
+	root.CFrame = CFrame.new(exitPos - look * FINISH_NUDGE + Vector3.new(0, 2, 0))
+	pcall(function()
+		root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+	end)
+	task.wait(0.1)
+	local ok, tween = pcall(function()
+		return TweenService:Create(root, TweenInfo.new(0.35, Enum.EasingStyle.Linear), {
+			CFrame = CFrame.new(exitPos + look * 2),
+		})
+	end)
+	if ok then
+		tween:Play()
+		task.wait(0.4)
+	end
+	root.CFrame = CFrame.new(exitPos + Vector3.new(0, 1, 0))
+	task.wait(0.3)
+end
+local function FinishConfirmed()
+	local r = GetRole()
+	return r == "Spectator" or r == "Lobby"
+end
 local function BeatGame()
 	if not Toggles.EnableAutoFarm.Value then
 		BeatState.BeatSurvivorDone = false
@@ -353,44 +384,47 @@ local function BeatGame()
 		Notify("⛔ Cancelled", "Not Survivor anymore")
 		return
 	end
-	local currentRoot = GetRoot()
-	if not currentRoot then
-		Notify("⛔ Cancelled", "Character missing")
-		return
-	end
 	Notify("🚀 Teleporting", "Moving to finish...")
-	currentRoot.CFrame = CFrame.new(exitPos)
+	local completed = false
+	for attempt = 1, FINISH_ATTEMPTS do
+		local cr = GetRoot()
+		if not cr then
+			Notify("⛔ Cancelled", "Character missing")
+			return
+		end
+		ApproachFinish(cr, exitPos)
+		local waited = 0
+		while waited < FINISH_CONFIRM do
+			task.wait(0.5)
+			waited = waited + 0.5
+			if not Toggles.EnableAutoFarm.Value then
+				Notify("⛔ Cancelled", "Toggle turned off")
+				return
+			end
+			if FinishConfirmed() then
+				completed = true
+				break
+			end
+		end
+		if completed then
+			break
+		end
+		if attempt < FINISH_ATTEMPTS then
+			Notify("⚠️ Retrying", string.format("Finish attempt %d/%d", attempt, FINISH_ATTEMPTS))
+		end
+	end
 	BeatState.BeatSurvivorDone = true
 	BeatState.LastFinishPos = exitPos
-	Notify("✅ Teleport Success", "Round completed!")
-	if not FinishWatchActive then
-		FinishWatchActive = true
-		task.spawn(function()
-			local start = os.clock()
-			local timeout = 10
-			while os.clock() - start < timeout do
-				if not Toggles.EnableAutoFarm.Value then
-					FinishWatchActive = false
-					return
-				end
-				if GetRole() == "Spectator" then
-					FinishWatchActive = false
-					Notify("👁️ Match Completed", "Role changed to Spectator.")
-					return
-				end
-				task.wait(0.5)
-			end
-			if GetRole() == "Survivor" then
-				Notify("🔴 Match Stuck", "Still Survivor after finish. Server hopping...")
-				pcall(function()
-					SendDebug("🔴 Match Stuck", string.format("Role remained `%s` after %ds.\nServer: `%s`", tostring(GetRole()), timeout, tostring(game.JobId)))
-				end)
-				if Toggles.ServerHop and Toggles.ServerHop.Value then
-					ForceServerHop = true
-				end
-			end
-			FinishWatchActive = false
+	if completed then
+		Notify("✅ Match Finished", "Round completed!")
+	else
+		Notify("🔴 Match Stuck", "Still Survivor after finish. Server hopping...")
+		pcall(function()
+			SendDebug("🔴 Match Stuck", string.format("Role remained `%s` after %d attempts.\nServer: `%s`", tostring(GetRole()), FINISH_ATTEMPTS, tostring(game.JobId)))
 		end)
+		if Toggles.ServerHop and Toggles.ServerHop.Value then
+			ForceServerHop = true
+		end
 	end
 	task.wait(5)
 	SendWebhook()
