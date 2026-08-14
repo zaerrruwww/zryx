@@ -1,30 +1,142 @@
-# ZRYX
+<div align="center">
 
-Standalone Luau payload for the Roblox experience Violence District. It uses a native Roblox UI and does not load a mutable UI library from a remote branch.
+<a href="https://www.roblox.com/games/93978595733734/Violence-District">
+  <img src="https://i.ibb.co.com/mVxPwkN4/no-Filter.webp" width="240">
+</a>
 
-## Features
-
-- Survivor finish-line automation for known Violence District maps
-- Low-population server hopping with temporary failed-server blacklist
-- Optional Discord webhook reporting with stat deltas
-- Optional auto-execution after teleport through `queue_on_teleport`
-- Local persistence for toggles, server range, script URL, snapshots, and ignored servers
-- Webhook URLs are intentionally kept only in memory and are not written to disk
-
-## Usage
-
-Run `zryx.lua` from a Roblox client executor while inside Violence District (`PlaceId` `93978595733734`). Open or hide the panel with `RightShift`.
-
-For Auto Execute, enable the toggle. Its default payload URL is `https://raw.githubusercontent.com/zaerrruwww/zryx/refs/heads/main/zryx.lua`; the script queues it immediately before teleporting. It will not teleport when Auto Execute is enabled but the URL or executor capability is missing.
-
-## Notes
-
-- The script validates the active place and exits outside Violence District.
-- Finish completion is confirmed from a role or map-state transition. A position update alone is not reported as a completed round.
-- Roblox game updates can change maps, roles, remotes, or anti-cheat behavior. Update the known-map adapters only after testing in an authorized environment.
-- Automation may violate the game's Terms of Service and can put an account at risk.
-
-## Attribution
-
-This is an independent implementation informed by the public feature set of [Rzor731/VD-AUTO-FARM](https://github.com/Rzor731/VD-AUTO-FARM), which is MIT licensed. No source files from that repository are included here.
 # zryx
+
+**zryx** by [zaerrruwww](https://github.com/zaerrruwww) | *Original by [Rzor731](https://github.com/Rzor731)*
+
+Automated Lua script for **Roblox Violence District** featuring Survivor auto farming, low-population server hopping, Discord webhook integration, and automatic re-execution.
+
+![Lua](https://img.shields.io/badge/Language-Lua-2C2D72?style=for-the-badge&logo=lua)
+![Roblox](https://img.shields.io/badge/Platform-Roblox-E2231A?style=for-the-badge&logo=roblox)
+![Status](https://img.shields.io/badge/Status-Active-22C55E?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v1.0-blue?style=for-the-badge)
+![License](https://img.shields.io/github/license/zaerrruwww/zryx?style=for-the-badge&v=1)
+
+</div>
+
+---
+
+## ✨ Features
+
+- **Auto Farm (Survivor)**  
+  - Detects the finish line on supported maps (Rooftop, HooksMeat, Church, etc.)  
+  - Teleports the player to the finish after a short delay  
+  - Automatically resets on each round  
+
+- **Server Hop**  
+  - Hops to servers with **1–3 players** when a round is active and you are a **Spectator** or **Killer**  
+  - Blacklists failed servers (10 minutes) and temporary reserves candidates  
+  - Native teleport failure handling with fallback JobId detection  
+
+- **Discord Webhook**  
+  - Sends detailed progress reports after each completed round  
+  - Tracks **KillerChance**, **EXP**, **Screws**, **Gears**, and **Level**  
+  - Calculates **delta** (changes) from the previous session  
+  - Persists attribute snapshots locally to avoid duplicate reporting  
+  - Includes a **Test Webhook** button for easy configuration  
+
+- **Auto Execute**  
+  - Queues the script to re‑execute automatically after teleporting (uses `queue_on_teleport` if available)  
+
+- **Customizable UI**  
+  - DPI scaling, corner radius, notification side, custom cursor  
+  - Keybind menu (default: `RightShift`)  
+  - All settings are saved and loaded automatically  
+
+---
+
+## 🛠️ Installation & Usage
+
+1. **Get the script**  
+   - Copy the raw content of `loader.lua` from this repository.
+
+2. **Inject with a Roblox executor**  
+   - Use any modern executor (Synapse Z, Krnl, Fluxus, etc.) that supports `loadstring` and HTTP requests.
+
+3. **Paste and execute**  
+   - Paste the script into your executor and run it.
+
+4. **Configure the GUI**  
+   - Open the menu with **RightShift** (or your custom keybind).  
+   - Enable **Auto Farm** and **Server Hop** as needed.  
+   - Set your **Webhook URL** and enable Webhook if you want Discord notifications.
+
+5. **Let it run**  
+   - The script will automatically farm Survivor rounds, hop servers when idle, and send webhook updates.
+
+---
+
+### 📥 One-Liner Execution
+Copy and paste this line into your executor and run it:
+
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/zaerrruwww/zryx/refs/heads/main/loader.lua"))()
+```
+
+## ⚙️ Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| **Enable Auto Farm** | Turns the Survivor teleport farm on/off. |
+| **Server Hop** | Automatically hops to low‑pop servers during rounds. |
+| **Auto Execute** | Queues the script to re‑run after teleport (requires `queue_on_teleport`). |
+| **Webhook** | Enable/disable Discord webhook. |
+| **Webhook Link** | Your Discord webhook URL (must be valid). |
+| **Test Webhook** | Sends a test embed to verify your webhook configuration. |
+| **Menu Keybind** | Custom key to open/close the UI (default: `RightShift`). |
+| **DPI Scale / Corner Radius** | UI appearance tweaks. |
+
+---
+
+## ⌨️ Default Keybinds
+
+| Action | Key |
+|--------|-----|
+| **Open/Close GUI** | `RightShift` |
+| **Toggle Keybind Menu** | *Via UI toggle* |
+
+> *All other options are controlled through the graphical interface.*
+
+---
+
+## 📦 File Structure
+
+- `loader.lua` – Main script, loads the Obsidian UI library and runs the farm logic.  
+- *External dependencies*:  
+  - [Obsidian UI Library](https://github.com/deividcomsono/Obsidian) (loaded remotely)  
+  - `ThemeManager` and `SaveManager` addons for UI theming and config persistence.
+
+---
+
+## ⚠️ Disclaimer
+
+> **This script is intended for educational purposes only.**  
+> Using automation tools in Roblox violates Roblox's Terms of Service.  
+> **Use at your own risk.** The developers are not responsible for any account bans, warnings, or data loss.
+
+---
+
+## 🙏 Credits
+
+- **Obsidian UI** – by [deividcomsono](https://github.com/deividcomsono)  
+- **zryx** – rebranded and maintained by [zaerrruwww](https://github.com/zaerrruwww)  
+- **VD-AUTO-FARM** – original script developed and maintained by [Rzor731](https://github.com/Rzor731)  
+
+---
+
+## 📝 Changelog
+
+- **v1.0.0** – Initial release  
+  - Survivor auto‑teleport  
+  - Server hop with blacklist  
+  - Discord webhook with attribute delta  
+  - Auto‑execute on teleport  
+  - Full UI with save/load
+
+---
+
+*Happy farming… but remember – play fair!* 😉
