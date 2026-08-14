@@ -17,6 +17,7 @@ local FINISH_CONFIRM_TIMEOUT = 12
 local CANDIDATE_IGNORE_SECONDS = 180
 local FAILED_IGNORE_SECONDS = 600
 local TELEPORT_TIMEOUT = 8
+local DEFAULT_SCRIPT_URL = "https://raw.githubusercontent.com/zaerrruwww/zryx/refs/heads/main/zryx.lua"
 
 local function getGlobalEnvironment()
 	if type(getgenv) == "function" then
@@ -94,7 +95,7 @@ local state = {
 		webhook = false,
 		minPlayers = 1,
 		maxPlayers = 3,
-		scriptUrl = "",
+		scriptUrl = DEFAULT_SCRIPT_URL,
 	},
 	webhookUrl = "",
 }
@@ -202,7 +203,8 @@ local function loadSettings()
 	state.settings.webhook = saved.webhook == true
 	state.settings.minPlayers = clampNumber(saved.minPlayers, 1, 1, 20)
 	state.settings.maxPlayers = clampNumber(saved.maxPlayers, 3, state.settings.minPlayers, 20)
-	state.settings.scriptUrl = type(saved.scriptUrl) == "string" and saved.scriptUrl or ""
+	local savedScriptUrl = type(saved.scriptUrl) == "string" and saved.scriptUrl:match("^%s*(.-)%s*$") or ""
+	state.settings.scriptUrl = savedScriptUrl ~= "" and savedScriptUrl or DEFAULT_SCRIPT_URL
 end
 
 local function saveSettings()
@@ -1254,7 +1256,7 @@ local function buildInterface()
 
 	local executeSection = section("AUTO EXECUTE")
 	local scriptUrlBox
-	scriptUrlBox = input(executeSection, "Script URL", "https://raw.githubusercontent.com/.../zryx.lua", state.settings.scriptUrl, function(value)
+	scriptUrlBox = input(executeSection, "Script URL", DEFAULT_SCRIPT_URL, state.settings.scriptUrl, function(value)
 		state.settings.scriptUrl = value:match("^%s*(.-)%s*$")
 		scriptUrlBox.Text = state.settings.scriptUrl
 		saveSettings()

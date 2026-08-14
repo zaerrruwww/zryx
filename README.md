@@ -15,7 +15,7 @@ Standalone Luau payload for the Roblox experience Violence District. It uses a n
 
 Run `zryx.lua` from a Roblox client executor while inside Violence District (`PlaceId` `93978595733734`). Open or hide the panel with `RightShift`.
 
-For Auto Execute, enable the toggle and enter a stable HTTPS URL that serves this exact payload. The script queues that URL immediately before it teleports. It will not teleport when Auto Execute is enabled but the URL or executor capability is missing.
+For Auto Execute, enable the toggle. Its default payload URL is `https://raw.githubusercontent.com/zaerrruwww/zryx/refs/heads/main/zryx.lua`; the script queues it immediately before teleporting. It will not teleport when Auto Execute is enabled but the URL or executor capability is missing.
 
 ## Notes
 
