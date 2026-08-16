@@ -511,7 +511,13 @@ TimeEvent.OnClientEvent:Connect(function(s)
 		IsRound = true
 	end
 end)
+local function IsAlone()
+	return #Players:GetPlayers() <= 1
+end
 local function CanHop()
+	if IsAlone() then
+		return true
+	end
 	if not IsRound then
 		return false
 	end
@@ -686,7 +692,7 @@ AutoFarmGroup:AddToggle("ServerHop", {
 		end
 	end,
 })
-local LOADER_URL = "https://raw.githubusercontent.com/zaerrruwww/zryx/refs/heads/main/loader.lua"
+local LOADER_URL = "https://raw.githubusercontent.com/zaerrruwww/zryx-auto-farm-vd/refs/heads/main/loader.lua"
 local AutoExecuteQueued = false
 local function QueueAutoExec()
 	if AutoExecuteQueued or not Toggles.AutoExecute.Value then

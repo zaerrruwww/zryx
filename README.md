@@ -14,7 +14,7 @@ Automated Lua script for **Roblox Violence District** featuring Survivor auto fa
 ![Roblox](https://img.shields.io/badge/Platform-Roblox-E2231A?style=for-the-badge&logo=roblox)
 ![Status](https://img.shields.io/badge/Status-Active-22C55E?style=for-the-badge)
 ![Version](https://img.shields.io/badge/Version-v1.0-blue?style=for-the-badge)
-![License](https://img.shields.io/github/license/zaerrruwww/zryx?style=for-the-badge&v=1)
+![License](https://img.shields.io/github/license/zaerrruwww/zryx-auto-farm-vd?style=for-the-badge&v=1)
 
 </div>
 
@@ -74,7 +74,7 @@ Automated Lua script for **Roblox Violence District** featuring Survivor auto fa
 Copy and paste this line into your executor and run it:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/zaerrruwww/zryx/refs/heads/main/loader.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/zaerrruwww/zryx-auto-farm-vd/refs/heads/main/loader.lua"))()
 ```
 
 ## ⚙️ Configuration Options

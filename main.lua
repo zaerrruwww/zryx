@@ -814,14 +814,25 @@ TimeEvent.OnClientEvent:Connect(function(s)
 	end
 end)
 
+--- Whether the local player is alone in the server.
+---
+--- @return boolean alone Whether no other players are present.
+--- @local
+local function IsAlone()
+	return #Players:GetPlayers() <= 1
+end
+
 --- Determines whether server hopping is allowed at the current moment.
 ---
---- Server hopping is only allowed during an active round when
---- the player is either a spectator or killer.
+--- Server hopping is allowed whenever the player is alone, or during
+--- an active round when the player is either a spectator or killer.
 ---
 --- @return boolean allowed Whether server hopping is currently allowed.
 --- @local
 local function CanHop()
+	if IsAlone() then
+		return true
+	end
 	if not IsRound then
 		return false
 	end
@@ -1044,7 +1055,7 @@ AutoFarmGroup:AddToggle("ServerHop", {
 
 --- Remote loader URL used by `queue_on_teleport`.
 --- @local
-local LOADER_URL = "https://raw.githubusercontent.com/zaerrruwww/zryx/refs/heads/main/main.lua"
+local LOADER_URL = "https://raw.githubusercontent.com/zaerrruwww/zryx-auto-farm-vd/refs/heads/main/main.lua"
 
 --- Indicates whether the current teleport already has
 --- an auto-execution payload queued.
