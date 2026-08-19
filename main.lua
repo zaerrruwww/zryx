@@ -350,19 +350,16 @@ local function SendWebhook(status, desc, force)
 	local zwsp = string.char(226, 128, 139)
 	local report = table.concat({
 		zwsp,
+		zwsp,
 		"> 👤 USER      : " .. LocalPlayer.DisplayName,
-		zwsp,
 		"> 🚀 STATUS    : " .. status,
-		zwsp,
 		"> ⏰ TIME      : " .. os.date("%H:%M:%S"),
 		zwsp,
 		zwsp,
-		zwsp,
 		"+ 🔩 SCREWS    : [ " .. screws .. " ]",
-		zwsp,
 		"+ ⚙️ GEARS     : [ " .. gears .. " ]",
-		zwsp,
 		"+ 📈 LEVEL     : [ " .. prevLevel .. " ➔ " .. lvl .. " ]",
+		zwsp,
 		zwsp,
 	}, "\n")
 	local payload = {
