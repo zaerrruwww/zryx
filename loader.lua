@@ -627,7 +627,7 @@ ServerHop = function()
 			if not forced and not CanHop() then
 				break
 			end
-			if srv.id and srv.id ~= curJob and srv.playing and srv.playing >= 1 and srv.playing <= 3 and not IsIgnored(srv.id) then
+			if srv.id and srv.id ~= curJob and srv.playing and srv.playing >= 2 and srv.playing <= 3 and not IsIgnored(srv.id) then
 				found = true
 				local id = srv.id
 				local count = srv.playing
@@ -669,7 +669,7 @@ ServerHop = function()
 				task.wait(PAGE_WAIT)
 			else
 				cursor = ""
-				Notify("⚠️ Server Hop", "No 1-3 player server available")
+				Notify("⚠️ Server Hop", "No 2-3 player server available")
 				task.wait(NO_SERVER_WAIT)
 			end
 		end
@@ -684,7 +684,7 @@ AutoFarmGroup:AddToggle("EnableAutoFarm", {
 })
 AutoFarmGroup:AddToggle("ServerHop", {
 	Text = "Server Hop",
-	Tooltip = "Hop to 1-3 player servers when round is active",
+	Tooltip = "Hop to 2-3 player servers when round is active",
 	Default = false,
 	Callback = function(v)
 		if v then
