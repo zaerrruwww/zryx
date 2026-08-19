@@ -668,6 +668,11 @@ local TELEPORT_TIMEOUT = 7
 --- @local
 local TELEPORT_RETRY_WAIT = 2.5
 
+--- Seconds without an active round before force-hopping to a new server.
+--- @type number
+--- @local
+local NO_ROUND_TIMEOUT = 30
+
 --- Server IDs currently ignored by the hopper.
 --- @type table<string, number>
 --- @local
@@ -946,13 +951,23 @@ ServerHop = function()
 	ResetTeleportState()
 	local cursor = ""
 	local apiFails = 0
+	local lastRoundAt = os.clock()
 	while Toggles.ServerHop and Toggles.ServerHop.Value and not Library.Unloaded do
 		local forced = ForceServerHop
 		ForceServerHop = false
+		if IsRound then
+			lastRoundAt = os.clock()
+		end
 		if not forced and not CanHop() then
-			ResetTeleportState()
-			task.wait(0.5)
-			continue
+			if not IsRound and not IsAlone() and os.clock() - lastRoundAt > NO_ROUND_TIMEOUT then
+				Notify("⏳ No Round", "No round for a while, hopping...")
+				forced = true
+			end
+			if not forced then
+				ResetTeleportState()
+				task.wait(0.5)
+				continue
+			end
 		end
 		local url = string.format("https://games.roblox.com/v1/games/%s/servers/Public?limit=100&sortOrder=Asc&excludeFullGames=true&cursor=%s", game.PlaceId, HttpService:UrlEncode(cursor))
 		local ok, res = pcall(function()

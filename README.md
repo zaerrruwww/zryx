@@ -31,6 +31,7 @@ Automated Lua script for **Roblox Violence District** featuring Survivor auto fa
   - Hops to servers with exactly **2 players** when a round is active and you are a **Spectator** or **Killer**  
   - Blacklists failed servers (10 minutes) and temporary reserves candidates  
   - Native teleport failure handling with fallback JobId detection  
+  - Automatically hops again if no round starts within 30 seconds  
 
 - **Discord Webhook**  
   - Sends a compact status report after each completed round  
