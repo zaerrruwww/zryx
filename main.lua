@@ -347,25 +347,27 @@ local function SendWebhook(status, desc, force)
 		}
 	end
 	local prevLevel = tonumber(PrevAttrs.Level) or lvl
-	local zwsp = string.char(226, 128, 139)
 	local report = table.concat({
-		zwsp,
-		zwsp,
+		"```diff",
+		"[ STATUS REPORT - AUTO FARM ]",
+		"",
+		"",
 		"> 👤 USER      : " .. LocalPlayer.DisplayName,
 		"> 🚀 STATUS    : " .. status,
 		"> ⏰ TIME      : " .. os.date("%H:%M:%S"),
-		zwsp,
-		zwsp,
+		"",
+		"",
 		"+ 🔩 SCREWS    : [ " .. screws .. " ]",
 		"+ ⚙️ GEARS     : [ " .. gears .. " ]",
 		"+ 📈 LEVEL     : [ " .. prevLevel .. " ➔ " .. lvl .. " ]",
-		zwsp,
-		zwsp,
+		"",
+		"",
+		"```",
 	}, "\n")
 	local payload = {
 		embeds = {
 			{
-				title = "[ STATUS REPORT - AUTO FARM ]",
+				title = "",
 				url = string.format("https://www.roblox.com/users/%d/profile", LocalPlayer.UserId),
 				description = report,
 				color = 3638942,
