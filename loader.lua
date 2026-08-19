@@ -494,16 +494,19 @@ local function IsIgnored(id)
 	return true
 end
 local IsRound = false
+local LastRoundActivity = os.clock()
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local StatusEvent = Remotes:WaitForChild("StatusUpdateEvent")
 local TimeEvent = Remotes:WaitForChild("TimeUpdateEvent")
 StatusEvent.OnClientEvent:Connect(function(s)
+	LastRoundActivity = os.clock()
 	if s == "WaitingForPlayers" or s == "IntermissionStarting" or s == "Intermission" then
 		IsRound = false
 		BeatState.BeatSurvivorDone = false
 	end
 end)
 TimeEvent.OnClientEvent:Connect(function(s)
+	LastRoundActivity = os.clock()
 	if s == "Round" then
 		IsRound = true
 	end
@@ -590,15 +593,14 @@ ServerHop = function()
 	ResetTeleportState()
 	local cursor = ""
 	local apiFails = 0
-	local lastRoundAt = os.clock()
 	while Toggles.ServerHop and Toggles.ServerHop.Value and not Library.Unloaded do
 		local forced = ForceServerHop
 		ForceServerHop = false
 		if IsRound then
-			lastRoundAt = os.clock()
+			LastRoundActivity = os.clock()
 		end
 		if not forced and not CanHop() then
-			if not IsRound and not IsAlone() and os.clock() - lastRoundAt > NO_ROUND_TIMEOUT then
+			if not IsRound and not IsAlone() and os.clock() - LastRoundActivity > NO_ROUND_TIMEOUT then
 				Notify("⏳ No Round", "No round for a while, hopping...")
 				forced = true
 			end
