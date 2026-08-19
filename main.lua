@@ -347,22 +347,23 @@ local function SendWebhook(status, desc, force)
 		}
 	end
 	local prevLevel = tonumber(PrevAttrs.Level) or lvl
+	local zwsp = string.char(226, 128, 139)
 	local report = table.concat({
-		"\u200b",
+		zwsp,
 		"> 👤 USER      : " .. LocalPlayer.DisplayName,
-		"\u200b",
+		zwsp,
 		"> 🚀 STATUS    : " .. status,
-		"\u200b",
+		zwsp,
 		"> ⏰ TIME      : " .. os.date("%H:%M:%S"),
-		"\u200b",
-		"\u200b",
-		"\u200b",
+		zwsp,
+		zwsp,
+		zwsp,
 		"+ 🔩 SCREWS    : [ " .. screws .. " ]",
-		"\u200b",
+		zwsp,
 		"+ ⚙️ GEARS     : [ " .. gears .. " ]",
-		"\u200b",
+		zwsp,
 		"+ 📈 LEVEL     : [ " .. prevLevel .. " ➔ " .. lvl .. " ]",
-		"\u200b",
+		zwsp,
 	}, "\n")
 	local payload = {
 		embeds = {
