@@ -191,12 +191,17 @@ local function SendWebhook(status, desc, force)
 	local report = table.concat({
 		"",
 		"> 👤 USER      : " .. LocalPlayer.DisplayName,
+		"",
 		"> 🚀 STATUS    : " .. status,
+		"",
 		"> ⏰ TIME      : " .. os.date("%H:%M:%S"),
 		"",
 		"",
+		"",
 		"+ 🔩 SCREWS    : [ " .. screws .. " ]",
+		"",
 		"+ ⚙️ GEARS     : [ " .. gears .. " ]",
+		"",
 		"+ 📈 LEVEL     : [ " .. prevLevel .. " ➔ " .. lvl .. " ]",
 	}, "\n")
 	local payload = {
