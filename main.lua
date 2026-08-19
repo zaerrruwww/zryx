@@ -203,6 +203,7 @@ local function LoadSnapshot()
 		EXP = tonumber(data.EXP),
 		Screws = tonumber(data.Screws),
 		Gears = tonumber(data.Gears),
+		Level = tonumber(data.Level),
 	}
 end
 
@@ -221,6 +222,7 @@ local function SaveSnapshot(attrs)
 		EXP = attrs.EXP,
 		Screws = attrs.Screws,
 		Gears = attrs.Gears,
+		Level = attrs.Level,
 		UpdatedAt = os.time(),
 	}
 	return pcall(function()
@@ -310,16 +312,17 @@ end
 
 --- Sends a player-statistic webhook.
 ---
---- The embed includes current KillerChance, EXP, Screws,
---- Gears, server ID, and the delta from the previous snapshot.
+--- The embed renders a compact status report with the player's
+--- DisplayName, status, local time, Screws, Gears, and the
+--- level change since the previous snapshot.
 ---
---- @param title string|nil Optional embed title.
---- @param desc string|nil Embed description.
+--- @param status string|nil Status shown in the report (defaults to `SUCCESS`).
+--- @param desc string|nil Reserved description text.
 --- @param force boolean|nil Whether to send even when the webhook toggle is disabled.
 --- @return boolean success Whether the webhook request succeeded.
 --- @return string status Result description.
 --- @local
-local function SendWebhook(title, desc, force)
+local function SendWebhook(status, desc, force)
 	if not force and not WebhookEnabled() then
 		return false, "Disabled"
 	end
@@ -333,48 +336,35 @@ local function SendWebhook(title, desc, force)
 	local screws = tonumber(attrs.Screws) or 0
 	local gears = tonumber(attrs.Gears) or 0
 	local lvl = tonumber(attrs.Level) or 0
+	status = status or "SUCCESS"
 	if not PrevAttrs then
 		PrevAttrs = {
 			KillerChance = kc,
 			EXP = exp,
 			Screws = screws,
 			Gears = gears,
+			Level = lvl,
 		}
 	end
+	local prevLevel = tonumber(PrevAttrs.Level) or lvl
+	local report = table.concat({
+		"",
+		"> 👤 USER      : " .. LocalPlayer.DisplayName,
+		"> 🚀 STATUS    : " .. status,
+		"> ⏰ TIME      : " .. os.date("%H:%M:%S"),
+		"",
+		"",
+		"+ 🔩 SCREWS    : [ " .. screws .. " ]",
+		"+ ⚙️ GEARS     : [ " .. gears .. " ]",
+		"+ 📈 LEVEL     : [ " .. prevLevel .. " ➔ " .. lvl .. " ]",
+	}, "\n")
 	local payload = {
 		embeds = {
 			{
-				title = title or string.format("%s · Level %d", LocalPlayer.DisplayName, lvl),
+				title = "[ STATUS REPORT - AUTO FARM ]",
 				url = string.format("https://www.roblox.com/users/%d/profile", LocalPlayer.UserId),
-				description = desc,
+				description = report,
 				color = 3638942,
-				fields = {
-					{
-						name = "💀 SIN",
-						value = string.format("%s (**%+d**)", kc, Delta(kc, PrevAttrs.KillerChance)),
-						inline = false,
-					},
-					{
-						name = "🧪 EXP",
-						value = string.format("%s (**%+d**)", exp, Delta(exp, PrevAttrs.EXP)),
-						inline = false,
-					},
-					{
-						name = "🔩 Screws",
-						value = string.format("%s (**%+d**)", screws, Delta(screws, PrevAttrs.Screws)),
-						inline = false,
-					},
-					{
-						name = "⚙️ Gears",
-						value = string.format("%s (**%+d**)", gears, Delta(gears, PrevAttrs.Gears)),
-						inline = false,
-					},
-					{
-						name = "🆔 Server ID",
-						value = string.format("```\n%s\n```", game.JobId ~= "" and game.JobId or "Singleplayer"),
-						inline = false,
-					},
-				},
 				footer = {
 					text = string.format("zryx by zaerrruwww · %s", ExecutorName()),
 				},
@@ -396,6 +386,7 @@ local function SendWebhook(title, desc, force)
 			EXP = exp,
 			Screws = screws,
 			Gears = gears,
+			Level = lvl,
 		}
 		SaveSnapshot(PrevAttrs)
 		return true, "OK"
@@ -1124,7 +1115,7 @@ WebhookGroup:AddInput("WebhookLink", {
 
 --- Sends a webhook test message.
 WebhookGroup:AddButton("Test Webhook", function()
-	local ok, msg = SendWebhook("🔔 Webhook Test", "Test from zryx!", true)
+	local ok, msg = SendWebhook("TEST", "Test from zryx!", true)
 	if ok then
 		Notify("Webhook Success", "Test message sent!")
 	else

@@ -33,9 +33,8 @@ Automated Lua script for **Roblox Violence District** featuring Survivor auto fa
   - Native teleport failure handling with fallback JobId detection  
 
 - **Discord Webhook**  
-  - Sends detailed progress reports after each completed round  
-  - Tracks **KillerChance**, **EXP**, **Screws**, **Gears**, and **Level**  
-  - Calculates **delta** (changes) from the previous session  
+  - Sends a compact status report after each completed round  
+  - Shows **USER**, **STATUS**, **TIME**, **Screws**, **Gears**, and **Level** progression  
   - Persists attribute snapshots locally to avoid duplicate reporting  
   - Includes a **Test Webhook** button for easy configuration  
 
