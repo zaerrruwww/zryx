@@ -16,7 +16,6 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 --- Base URL for the Obsidian UI library.
@@ -82,6 +81,11 @@ local BeatState = {
 	BeatSurvivorDone = false,
 	LastRole = nil,
 }
+
+--- Whether the post-finish role watchdog is currently active.
+--- @type boolean
+--- @local
+local FinishWatchActive = false
 
 --- Forces the server-hop routine to execute on its next iteration.
 --- @type boolean
@@ -203,7 +207,6 @@ local function LoadSnapshot()
 		EXP = tonumber(data.EXP),
 		Screws = tonumber(data.Screws),
 		Gears = tonumber(data.Gears),
-		Level = tonumber(data.Level),
 	}
 end
 
@@ -222,7 +225,6 @@ local function SaveSnapshot(attrs)
 		EXP = attrs.EXP,
 		Screws = attrs.Screws,
 		Gears = attrs.Gears,
-		Level = attrs.Level,
 		UpdatedAt = os.time(),
 	}
 	return pcall(function()
@@ -312,17 +314,16 @@ end
 
 --- Sends a player-statistic webhook.
 ---
---- The embed renders a compact status report with the player's
---- DisplayName, status, local time, Screws, Gears, and the
---- level change since the previous snapshot.
+--- The embed includes current KillerChance, EXP, Screws,
+--- Gears, server ID, and the delta from the previous snapshot.
 ---
---- @param status string|nil Status shown in the report (defaults to `SUCCESS`).
---- @param desc string|nil Reserved description text.
+--- @param title string|nil Optional embed title.
+--- @param desc string|nil Embed description.
 --- @param force boolean|nil Whether to send even when the webhook toggle is disabled.
 --- @return boolean success Whether the webhook request succeeded.
 --- @return string status Result description.
 --- @local
-local function SendWebhook(status, desc, force)
+local function SendWebhook(title, desc, force)
 	if not force and not WebhookEnabled() then
 		return false, "Disabled"
 	end
@@ -336,41 +337,48 @@ local function SendWebhook(status, desc, force)
 	local screws = tonumber(attrs.Screws) or 0
 	local gears = tonumber(attrs.Gears) or 0
 	local lvl = tonumber(attrs.Level) or 0
-	status = status or "SUCCESS"
 	if not PrevAttrs then
 		PrevAttrs = {
 			KillerChance = kc,
 			EXP = exp,
 			Screws = screws,
 			Gears = gears,
-			Level = lvl,
 		}
 	end
-	local prevLevel = tonumber(PrevAttrs.Level) or lvl
-	local report = table.concat({
-		"```diff",
-		"[ STATUS REPORT - AUTO FARM ]",
-		"",
-		"",
-		"> 👤 USER      : " .. LocalPlayer.DisplayName,
-		"> 🚀 STATUS    : " .. status,
-		"> ⏰ TIME      : " .. os.date("%H:%M:%S"),
-		"",
-		"",
-		"+ 🔩 SCREWS    : [ " .. screws .. " ]",
-		"+ ⚙️ GEARS     : [ " .. gears .. " ]",
-		"+ 📈 LEVEL     : [ " .. prevLevel .. " ➔ " .. lvl .. " ]",
-		"",
-		"",
-		"```",
-	}, "\n")
 	local payload = {
 		embeds = {
 			{
-				title = "",
+				title = title or string.format("%s · Level %d", LocalPlayer.DisplayName, lvl),
 				url = string.format("https://www.roblox.com/users/%d/profile", LocalPlayer.UserId),
-				description = report,
+				description = desc,
 				color = 3638942,
+				fields = {
+					{
+						name = "💀 SIN",
+						value = string.format("%s (**%+d**)", kc, Delta(kc, PrevAttrs.KillerChance)),
+						inline = false,
+					},
+					{
+						name = "🧪 EXP",
+						value = string.format("%s (**%+d**)", exp, Delta(exp, PrevAttrs.EXP)),
+						inline = false,
+					},
+					{
+						name = "🔩 Screws",
+						value = string.format("%s (**%+d**)", screws, Delta(screws, PrevAttrs.Screws)),
+						inline = false,
+					},
+					{
+						name = "⚙️ Gears",
+						value = string.format("%s (**%+d**)", gears, Delta(gears, PrevAttrs.Gears)),
+						inline = false,
+					},
+					{
+						name = "🆔 Server ID",
+						value = string.format("```\n%s\n```", game.JobId ~= "" and game.JobId or "Singleplayer"),
+						inline = false,
+					},
+				},
 				footer = {
 					text = string.format("zryx by zaerrruwww · %s", ExecutorName()),
 				},
@@ -392,7 +400,6 @@ local function SendWebhook(status, desc, force)
 			EXP = exp,
 			Screws = screws,
 			Gears = gears,
-			Level = lvl,
 		}
 		SaveSnapshot(PrevAttrs)
 		return true, "OK"
@@ -472,67 +479,11 @@ local function FindFinish(map)
 	return pos
 end
 
---- Number of finish teleport attempts before considering the round stuck.
---- @type number
---- @local
-local FINISH_ATTEMPTS = 3
-
---- Seconds to wait after each teleport attempt for the round to complete.
---- @type number
---- @local
-local FINISH_CONFIRM = 4
-
---- Studs before the finish line used as the approach offset.
---- @type number
---- @local
-local FINISH_NUDGE = 3
-
---- Teleports the player just before the finish line and walks
---- through it, so the round completion trigger reliably fires.
----
---- @param root BasePart Character root part.
---- @param exitPos Vector3 Finish position.
---- @return nil
---- @local
-local function ApproachFinish(root, exitPos)
-	local look = root.CFrame.LookVector
-	look = Vector3.new(look.X, 0, look.Z)
-	if look.Magnitude < 0.1 then
-		look = Vector3.new(0, 0, -1)
-	end
-	look = look.Unit
-	root.CFrame = CFrame.new(exitPos - look * FINISH_NUDGE + Vector3.new(0, 2, 0))
-	pcall(function()
-		root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-	end)
-	task.wait(0.1)
-	local ok, tween = pcall(function()
-		return TweenService:Create(root, TweenInfo.new(0.35, Enum.EasingStyle.Linear), {
-			CFrame = CFrame.new(exitPos + look * 2),
-		})
-	end)
-	if ok then
-		tween:Play()
-		task.wait(0.4)
-	end
-	root.CFrame = CFrame.new(exitPos + Vector3.new(0, 1, 0))
-	task.wait(0.3)
-end
-
---- Whether the current round can be considered completed.
----
---- @return boolean done Whether the round has ended.
---- @local
-local function FinishConfirmed()
-	local r = GetRole()
-	return r == "Spectator" or r == "Lobby"
-end
-
 --- Completes the current survivor round by teleporting
 --- the local player to the detected finish position.
 ---
---- The function retries the teleport up to `FINISH_ATTEMPTS`
---- times and only reports a stuck round when all attempts fail.
+--- The function also starts a watchdog that detects
+--- a potentially stuck round after teleporting.
 ---
 --- @return nil
 --- @local
@@ -583,47 +534,46 @@ local function BeatGame()
 		Notify("⛔ Cancelled", "Not Survivor anymore")
 		return
 	end
-	Notify("🚀 Teleporting", "Moving to finish...")
-	local completed = false
-	for attempt = 1, FINISH_ATTEMPTS do
-		local cr = GetRoot()
-		if not cr then
-			Notify("⛔ Cancelled", "Character missing")
-			return
-		end
-		ApproachFinish(cr, exitPos)
-		local waited = 0
-		while waited < FINISH_CONFIRM do
-			task.wait(0.5)
-			waited = waited + 0.5
-			if not Toggles.EnableAutoFarm.Value then
-				Notify("⛔ Cancelled", "Toggle turned off")
-				return
-			end
-			if FinishConfirmed() then
-				completed = true
-				break
-			end
-		end
-		if completed then
-			break
-		end
-		if attempt < FINISH_ATTEMPTS then
-			Notify("⚠️ Retrying", string.format("Finish attempt %d/%d", attempt, FINISH_ATTEMPTS))
-		end
+	local currentRoot = GetRoot()
+	if not currentRoot then
+		Notify("⛔ Cancelled", "Character missing")
+		return
 	end
+	Notify("🚀 Teleporting", "Moving to finish...")
+	currentRoot.CFrame = CFrame.new(exitPos)
 	BeatState.BeatSurvivorDone = true
 	BeatState.LastFinishPos = exitPos
-	if completed then
-		Notify("✅ Match Finished", "Round completed!")
-	else
-		Notify("🔴 Match Stuck", "Still Survivor after finish. Server hopping...")
-		pcall(function()
-			SendDebug("🔴 Match Stuck", string.format("Role remained `%s` after %d attempts.\nServer: `%s`", tostring(GetRole()), FINISH_ATTEMPTS, tostring(game.JobId)))
+	Notify("✅ Teleport Success", "Round completed!")
+
+	--- Monitors the player's role after reaching the finish.
+	if not FinishWatchActive then
+		FinishWatchActive = true
+		task.spawn(function()
+			local start = os.clock()
+			local timeout = 10
+			while os.clock() - start < timeout do
+				if not Toggles.EnableAutoFarm.Value then
+					FinishWatchActive = false
+					return
+				end
+				if GetRole() == "Spectator" then
+					FinishWatchActive = false
+					Notify("👁️ Match Completed", "Role changed to Spectator.")
+					return
+				end
+				task.wait(0.5)
+			end
+			if GetRole() == "Survivor" then
+				Notify("🔴 Match Stuck", "Still Survivor after finish. Server hopping...")
+				pcall(function()
+					SendDebug("🔴 Match Stuck", string.format("Role remained `%s` after %ds.\nServer: `%s`", tostring(GetRole()), timeout, tostring(game.JobId)))
+				end)
+				if Toggles.ServerHop and Toggles.ServerHop.Value then
+					ForceServerHop = true
+				end
+			end
+			FinishWatchActive = false
 		end)
-		if Toggles.ServerHop and Toggles.ServerHop.Value then
-			ForceServerHop = true
-		end
 	end
 	task.wait(5)
 	SendWebhook()
@@ -667,11 +617,6 @@ local TELEPORT_TIMEOUT = 7
 --- @type number
 --- @local
 local TELEPORT_RETRY_WAIT = 2.5
-
---- Seconds without an active round before force-hopping to a new server.
---- @type number
---- @local
-local NO_ROUND_TIMEOUT = 30
 
 --- Server IDs currently ignored by the hopper.
 --- @type table<string, number>
@@ -793,12 +738,6 @@ end
 --- @local
 local IsRound = false
 
---- Timestamp of the latest round status/timer activity.
---- Used to avoid hopping during pre-round countdowns.
---- @type number
---- @local
-local LastRoundActivity = os.clock()
-
 --- Remote event container.
 --- @local
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
@@ -811,38 +750,25 @@ local StatusEvent = Remotes:WaitForChild("StatusUpdateEvent")
 --- @local
 local TimeEvent = Remotes:WaitForChild("TimeUpdateEvent")
 StatusEvent.OnClientEvent:Connect(function(s)
-	LastRoundActivity = os.clock()
 	if s == "WaitingForPlayers" or s == "IntermissionStarting" or s == "Intermission" then
 		IsRound = false
 		BeatState.BeatSurvivorDone = false
 	end
 end)
 TimeEvent.OnClientEvent:Connect(function(s)
-	LastRoundActivity = os.clock()
 	if s == "Round" then
 		IsRound = true
 	end
 end)
 
---- Whether the local player is alone in the server.
----
---- @return boolean alone Whether no other players are present.
---- @local
-local function IsAlone()
-	return #Players:GetPlayers() <= 1
-end
-
 --- Determines whether server hopping is allowed at the current moment.
 ---
---- Server hopping is allowed whenever the player is alone, or during
---- an active round when the player is either a spectator or killer.
+--- Server hopping is only allowed during an active round when
+--- the player is either a spectator or killer.
 ---
 --- @return boolean allowed Whether server hopping is currently allowed.
 --- @local
 local function CanHop()
-	if IsAlone() then
-		return true
-	end
 	if not IsRound then
 		return false
 	end
@@ -962,19 +888,10 @@ ServerHop = function()
 	while Toggles.ServerHop and Toggles.ServerHop.Value and not Library.Unloaded do
 		local forced = ForceServerHop
 		ForceServerHop = false
-		if IsRound then
-			LastRoundActivity = os.clock()
-		end
 		if not forced and not CanHop() then
-			if not IsRound and not IsAlone() and os.clock() - LastRoundActivity > NO_ROUND_TIMEOUT then
-				Notify("⏳ No Round", "No round for a while, hopping...")
-				forced = true
-			end
-			if not forced then
-				ResetTeleportState()
-				task.wait(0.5)
-				continue
-			end
+			ResetTeleportState()
+			task.wait(0.5)
+			continue
 		end
 		local url = string.format("https://games.roblox.com/v1/games/%s/servers/Public?limit=100&sortOrder=Asc&excludeFullGames=true&cursor=%s", game.PlaceId, HttpService:UrlEncode(cursor))
 		local ok, res = pcall(function()
@@ -1002,7 +919,7 @@ ServerHop = function()
 			if not forced and not CanHop() then
 				break
 			end
-			if srv.id and srv.id ~= curJob and srv.playing == 2 and not IsIgnored(srv.id) then
+			if srv.id and srv.id ~= curJob and srv.playing and srv.playing >= 1 and srv.playing <= 3 and not IsIgnored(srv.id) then
 				found = true
 				local id = srv.id
 				local count = srv.playing
@@ -1044,7 +961,7 @@ ServerHop = function()
 				task.wait(PAGE_WAIT)
 			else
 				cursor = ""
-				Notify("⚠️ Server Hop", "No 2 player server available")
+				Notify("⚠️ Server Hop", "No 1-3 player server available")
 				task.wait(NO_SERVER_WAIT)
 			end
 		end
@@ -1063,7 +980,7 @@ AutoFarmGroup:AddToggle("EnableAutoFarm", {
 --- Enables or disables automatic low-population server hopping.
 AutoFarmGroup:AddToggle("ServerHop", {
 	Text = "Server Hop",
-	Tooltip = "Hop to 2 player servers when round is active",
+	Tooltip = "Hop to 1-3 player servers when round is active",
 	Default = false,
 	Callback = function(v)
 		if v then
@@ -1120,13 +1037,6 @@ AutoFarmGroup:AddToggle("AutoExecute", {
 	end,
 })
 
---- Enables or disables the anti-idle protection.
-AutoFarmGroup:AddToggle("AntiAfk", {
-	Text = "Anti AFK",
-	Tooltip = "Simulate input to avoid the 20-minute idle disconnect",
-	Default = true,
-})
-
 --- Enables Discord webhook notifications.
 WebhookGroup:AddToggle("EnableWebhook", {
 	Text = "Enable Webhook",
@@ -1143,7 +1053,7 @@ WebhookGroup:AddInput("WebhookLink", {
 
 --- Sends a webhook test message.
 WebhookGroup:AddButton("Test Webhook", function()
-	local ok, msg = SendWebhook("TEST", "Test from zryx!", true)
+	local ok, msg = SendWebhook("🔔 Webhook Test", "Test from zryx!", true)
 	if ok then
 		Notify("Webhook Success", "Test message sent!")
 	else
@@ -1245,23 +1155,6 @@ SaveManager:LoadAutoloadConfig()
 
 --- Queue auto-execution if enabled by the loaded configuration.
 QueueAutoExec()
-
---- Prevents the client's 20-minute idle disconnect by simulating
---- input whenever the `Idled` event fires.
-task.spawn(function()
-	local VirtualUser = game:GetService("VirtualUser")
-	LocalPlayer.Idled:Connect(function()
-		if not (Toggles.AntiAfk and Toggles.AntiAfk.Value) then
-			return
-		end
-		pcall(function()
-			VirtualUser:CaptureController()
-			VirtualUser:Button2Down(Vector2.new(0, 0))
-			task.wait(1)
-			VirtualUser:Button2Up(Vector2.new(0, 0))
-		end)
-	end)
-end)
 
 --- Main Auto Farm worker.
 ---

@@ -6,8 +6,6 @@
 
 # zryx
 
-**zryx** by [zaerrruwww](https://github.com/zaerrruwww) | *Original by [Rzor731](https://github.com/Rzor731)*
-
 Automated Lua script for **Roblox Violence District** featuring Survivor auto farming, low-population server hopping, Discord webhook integration, and automatic re-execution.
 
 ![Lua](https://img.shields.io/badge/Language-Lua-2C2D72?style=for-the-badge&logo=lua)
@@ -28,23 +26,19 @@ Automated Lua script for **Roblox Violence District** featuring Survivor auto fa
   - Automatically resets on each round  
 
 - **Server Hop**  
-  - Hops to servers with exactly **2 players** when a round is active and you are a **Spectator** or **Killer**  
+  - Hops to servers with **1–3 players** when a round is active and you are a **Spectator** or **Killer**  
   - Blacklists failed servers (10 minutes) and temporary reserves candidates  
   - Native teleport failure handling with fallback JobId detection  
-  - Automatically hops again if no round starts within 30 seconds  
 
 - **Discord Webhook**  
-  - Sends a compact status report after each completed round  
-  - Shows **USER**, **STATUS**, **TIME**, **Screws**, **Gears**, and **Level** progression  
+  - Sends detailed progress reports after each completed round  
+  - Tracks **KillerChance**, **EXP**, **Screws**, **Gears**, and **Level**  
+  - Calculates **delta** (changes) from the previous session  
   - Persists attribute snapshots locally to avoid duplicate reporting  
   - Includes a **Test Webhook** button for easy configuration  
 
 - **Auto Execute**  
   - Queues the script to re‑execute automatically after teleporting (uses `queue_on_teleport` if available)  
-
-- **Anti-AFK**  
-  - Simulates input to avoid the 20‑minute idle disconnect  
-  - Runs automatically while the toggle is enabled  
 
 - **Customizable UI**  
   - DPI scaling, corner radius, notification side, custom cursor  
@@ -88,7 +82,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/zaerrruwww/zryx-auto-
 | **Enable Auto Farm** | Turns the Survivor teleport farm on/off. |
 | **Server Hop** | Automatically hops to low‑pop servers during rounds. |
 | **Auto Execute** | Queues the script to re‑run after teleport (requires `queue_on_teleport`). |
-| **Anti AFK** | Simulates input to prevent the 20‑minute idle disconnect. |
 | **Webhook** | Enable/disable Discord webhook. |
 | **Webhook Link** | Your Discord webhook URL (must be valid). |
 | **Test Webhook** | Sends a test embed to verify your webhook configuration. |
@@ -127,9 +120,9 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/zaerrruwww/zryx-auto-
 
 ## 🙏 Credits
 
+- **zryx** – maintained by [zaerrruwww](https://github.com/zaerrruwww)  
+- **VD-AUTO-FARM** – original script by [Rzor731](https://github.com/Rzor731)  
 - **Obsidian UI** – by [deividcomsono](https://github.com/deividcomsono)  
-- **zryx** – rebranded and maintained by [zaerrruwww](https://github.com/zaerrruwww)  
-- **VD-AUTO-FARM** – original script developed and maintained by [Rzor731](https://github.com/Rzor731)  
 
 ---
 
