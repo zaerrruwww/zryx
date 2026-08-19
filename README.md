@@ -42,6 +42,10 @@ Automated Lua script for **Roblox Violence District** featuring Survivor auto fa
 - **Auto Execute**  
   - Queues the script to re‑execute automatically after teleporting (uses `queue_on_teleport` if available)  
 
+- **Anti-AFK**  
+  - Simulates input to avoid the 20‑minute idle disconnect  
+  - Runs automatically while the toggle is enabled  
+
 - **Customizable UI**  
   - DPI scaling, corner radius, notification side, custom cursor  
   - Keybind menu (default: `RightShift`)  
@@ -84,6 +88,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/zaerrruwww/zryx-auto-
 | **Enable Auto Farm** | Turns the Survivor teleport farm on/off. |
 | **Server Hop** | Automatically hops to low‑pop servers during rounds. |
 | **Auto Execute** | Queues the script to re‑run after teleport (requires `queue_on_teleport`). |
+| **Anti AFK** | Simulates input to prevent the 20‑minute idle disconnect. |
 | **Webhook** | Enable/disable Discord webhook. |
 | **Webhook Link** | Your Discord webhook URL (must be valid). |
 | **Test Webhook** | Sends a test embed to verify your webhook configuration. |

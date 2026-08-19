@@ -725,6 +725,11 @@ AutoFarmGroup:AddToggle("AutoExecute", {
 		end
 	end,
 })
+AutoFarmGroup:AddToggle("AntiAfk", {
+	Text = "Anti AFK",
+	Tooltip = "Simulate input to avoid the 20-minute idle disconnect",
+	Default = true,
+})
 WebhookGroup:AddToggle("EnableWebhook", {
 	Text = "Enable Webhook",
 	Default = false,
@@ -819,6 +824,20 @@ SaveManager:BuildConfigSection(Tabs.Settings)
 ThemeManager:ApplyToTab(Tabs.Settings)
 SaveManager:LoadAutoloadConfig()
 QueueAutoExec()
+task.spawn(function()
+	local VirtualUser = game:GetService("VirtualUser")
+	LocalPlayer.Idled:Connect(function()
+		if not (Toggles.AntiAfk and Toggles.AntiAfk.Value) then
+			return
+		end
+		pcall(function()
+			VirtualUser:CaptureController()
+			VirtualUser:Button2Down(Vector2.new(0, 0))
+			task.wait(1)
+			VirtualUser:Button2Up(Vector2.new(0, 0))
+		end)
+	end)
+end)
 task.spawn(function()
 	while not Library.Unloaded do
 		pcall(BeatGame)

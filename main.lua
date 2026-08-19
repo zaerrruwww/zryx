@@ -1101,6 +1101,13 @@ AutoFarmGroup:AddToggle("AutoExecute", {
 	end,
 })
 
+--- Enables or disables the anti-idle protection.
+AutoFarmGroup:AddToggle("AntiAfk", {
+	Text = "Anti AFK",
+	Tooltip = "Simulate input to avoid the 20-minute idle disconnect",
+	Default = true,
+})
+
 --- Enables Discord webhook notifications.
 WebhookGroup:AddToggle("EnableWebhook", {
 	Text = "Enable Webhook",
@@ -1219,6 +1226,23 @@ SaveManager:LoadAutoloadConfig()
 
 --- Queue auto-execution if enabled by the loaded configuration.
 QueueAutoExec()
+
+--- Prevents the client's 20-minute idle disconnect by simulating
+--- input whenever the `Idled` event fires.
+task.spawn(function()
+	local VirtualUser = game:GetService("VirtualUser")
+	LocalPlayer.Idled:Connect(function()
+		if not (Toggles.AntiAfk and Toggles.AntiAfk.Value) then
+			return
+		end
+		pcall(function()
+			VirtualUser:CaptureController()
+			VirtualUser:Button2Down(Vector2.new(0, 0))
+			task.wait(1)
+			VirtualUser:Button2Up(Vector2.new(0, 0))
+		end)
+	end)
+end)
 
 --- Main Auto Farm worker.
 ---
